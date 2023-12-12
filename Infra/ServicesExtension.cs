@@ -1,11 +1,11 @@
-﻿using Infra.Repositories.Games;
-using Infra.Repositories.Purchases;
-using Infra.Repositories.Users;
+﻿using Infra.Repositories.CData;
+using Infra.Repositories.EntityFramework;
+using Infra.Repositories.MongoDbDriver;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Infra
 {
-	public static class ServicesExtension
+    public static class ServicesExtension
 	{
 		public static IServiceCollection RegisterInfraDependencies(this IServiceCollection services)
 		{
