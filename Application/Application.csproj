@@ -12,7 +12,9 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Domain\Domain.csproj" />
-    <ProjectReference Include="..\Infra\Infra.csproj" />
+    <ProjectReference Include="..\Infra.CData\Infra.CData.csproj" />
+    <ProjectReference Include="..\Infra.EntityFramework\Infra.EntityFramework.csproj" />
+    <ProjectReference Include="..\Infra.MongoDbDriver\Infra.MongoDbDriver.csproj" />
   </ItemGroup>
 
 </Project>

@@ -1,16 +1,15 @@
 ﻿using Application.Request;
 using Application.Response;
 using Domain.Entities;
-using Infra;
-using Infra.Repositories;
-using Infra.Repositories.CData;
-using Infra.Repositories.EntityFramework;
-using Infra.Repositories.MongoDbDriver;
+using Infra.CData.Repositories;
+using Infra.Data.Repositories;
+using Infra.EntityFramework.Repositories;
+using Infra.MongoDbDriver.Repositories;
 using System.Collections.Concurrent;
 
 namespace Application.Services
 {
-    public class GameStorageService : IGameStorageService
+	public class GameStorageService : IGameStorageService
 	{
 		private readonly IServiceProvider _serviceProvider;
 		private readonly IAutoFakerFacadeService _fakerService;

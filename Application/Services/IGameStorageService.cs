@@ -1,6 +1,5 @@
 ﻿using Application.Request;
 using Application.Response;
-using Infra;
 
 namespace Application.Services
 {
