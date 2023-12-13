@@ -5,16 +5,16 @@ namespace Infra.EntityFramework.Repositories
 {
     public interface IPurchaseEFRepository : IPurchaseRepository { }
 
-    public class PurchaseEFRepository : IPurchaseEFRepository
-    {
-        public List<Purchase> GetDescListByUserId(string id)
-        {
-            throw new NotImplementedException();
-        }
+	public class PurchaseEFRepository : IPurchaseEFRepository
+	{
+		public Task<List<Purchase>> GetDescListByUserIdAsync(string id)
+		{
+			throw new NotImplementedException();
+		}
 
-        public void Insert(Purchase newPurchase)
-        {
-            throw new NotImplementedException();
-        }
-    }
+		public Task InsertAsync(Purchase newPurchase)
+		{
+			throw new NotImplementedException();
+		}
+	}
 }

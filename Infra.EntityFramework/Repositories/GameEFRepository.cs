@@ -5,21 +5,21 @@ namespace Infra.EntityFramework.Repositories
 {
     public interface IGameEFRepository : IGameRepository { }
 
-    public class GameEFRepository : IGameEFRepository
-    {
-        public List<Game> GetDescList(int count)
-        {
-            throw new NotImplementedException();
-        }
+	public class GameEFRepository : IGameEFRepository
+	{
+		public Task<List<Game>> GetDescListAsync(int count)
+		{
+			throw new NotImplementedException();
+		}
 
-        public void Insert(Game game)
-        {
-            throw new NotImplementedException();
-        }
+		public Task InsertAsync(Game game)
+		{
+			throw new NotImplementedException();
+		}
 
-        public void Update(Game game)
-        {
-            throw new NotImplementedException();
-        }
-    }
+		public Task UpdateAsync(Game game)
+		{
+			throw new NotImplementedException();
+		}
+	}
 }

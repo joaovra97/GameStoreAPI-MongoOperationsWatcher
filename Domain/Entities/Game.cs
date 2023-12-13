@@ -1,12 +1,17 @@
-﻿namespace Domain.Entities
+﻿using MongoDB.Bson;
+using MongoDB.Bson.Serialization.Attributes;
+
+namespace Domain.Entities
 {
-	public abstract class Game
+	public class Game
 	{
-		public virtual string Id { get; set; }
-		public virtual string Title { get; set; }
-		public virtual string Developer { get; set; }
-		public virtual Genre Genre { get; set; }
-		public virtual float Price { get; set; }
+		[BsonId]
+		[BsonRepresentation(BsonType.ObjectId)]
+		public string Id { get; set; }
+		public string Title { get; set; }
+		public string Developer { get; set; }
+		public Genre Genre { get; set; }
+		public decimal Price { get; set; }
 	}
 
 	public enum Genre

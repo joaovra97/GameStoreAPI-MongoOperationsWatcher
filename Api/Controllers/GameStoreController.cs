@@ -1,12 +1,14 @@
-﻿using Application.Request;
-using Microsoft.AspNetCore.Mvc;
-using Application.Services;
+﻿using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
-using Application;
+using Application.Services.Interfaces;
+using Swashbuckle.AspNetCore.Annotations;
+using Application.Response;
 
 namespace Api.Controllers
 {
-	[ApiController]	
+	//[Produces("application/json")]
+	[Route("api/[controller]")]
+	[ApiController]
 	public class GameStoreController : ControllerBase
 	{
 		private readonly IGameStorageService _gameStorageService;
@@ -15,101 +17,183 @@ namespace Api.Controllers
 		{
 			_gameStorageService = gameStorageService;
 		}
-		
-		[HttpPost("{provider}/game-batch-insert")]
-		public IActionResult GameBatchInsert([FromRoute] Provider provider, [FromBody] GameBatchInsertRequest request)
-		{
-			Stopwatch stopwatch = Stopwatch.StartNew();
 
-			try 
-			{
-				_gameStorageService.SetProvider(provider);
-				_gameStorageService.GameBatchInsert(request);
-				stopwatch.Stop();
-				return Ok(stopwatch);
-			}
-			catch (Exception ex)
-			{
-				stopwatch.Stop();
-				return StatusCode(StatusCodes.Status500InternalServerError, new { stopwatch, errorMessage = ex.Message });
-			}
-		}
-
-		[HttpPost("{provider}/user-batch-insert")]
-		public IActionResult UserBatchInsert([FromRoute] Provider provider, [FromBody] UserBatchInsertRequest request)
+		/// <summary>
+		/// Insert a batch of games.
+		/// </summary>
+		/// <param name="totalItems">Total number of items to be inserted.</param>
+		/// <param name="maxParallel">Maximum number of concurrent threads.</param>
+		/// <returns></returns>
+		[HttpPost("game-batch-insert")]
+		[SwaggerResponse(200, "Success", typeof(DefaultResponse))]
+		[SwaggerResponse(400, "Bad request", typeof(ErrorResponse))]
+		[SwaggerResponse(500, "Internal server error", typeof(ErrorResponse))]
+		public async Task<IActionResult> GameBatchInsertAsync([FromQuery] int totalItems = 100, [FromQuery] int maxParallel = 5)
 		{
 			Stopwatch stopwatch = Stopwatch.StartNew();
 
 			try
 			{
-				_gameStorageService.SetProvider(provider);
-				_gameStorageService.UserBatchInsert(request);
+				ValidateParams(totalItems, maxParallel);
+
+				await _gameStorageService.GameBatchInsertAsync(totalItems, maxParallel);
 				stopwatch.Stop();
-				return Ok(stopwatch);
+				return Ok(new DefaultResponse(stopwatch));
+			}
+			catch (ArgumentException ex)
+			{
+				stopwatch.Stop();
+				return BadRequest(new ErrorResponse(stopwatch, ex.Message));
 			}
 			catch (Exception ex)
 			{
 				stopwatch.Stop();
-				return StatusCode(StatusCodes.Status500InternalServerError, new { stopwatch, errorMessage = ex.Message });				
+				return StatusCode(StatusCodes.Status500InternalServerError, new ErrorResponse(stopwatch, ex.Message));
 			}
 		}
 
-		[HttpPost("{provider}/purchase-batch-insert")]
-		public IActionResult PurchaseBatchInsert([FromRoute] Provider provider, [FromBody] PurchaseBatchInsertRequest request)
+		/// <summary>
+		/// Insert a batch of users.
+		/// </summary>
+		/// <param name="totalItems">Total number of items to be inserted.</param>
+		/// <param name="maxParallel">Maximum number of concurrent threads.</param>
+		/// <returns></returns>
+		[HttpPost("user-batch-insert")]
+		[SwaggerResponse(200, "Success", typeof(DefaultResponse))]
+		[SwaggerResponse(400, "Bad request", typeof(ErrorResponse))]
+		[SwaggerResponse(500, "Internal server error", typeof(ErrorResponse))]
+		public async Task<IActionResult> UserBatchInsertAsync([FromQuery] int totalItems = 100, [FromQuery] int maxParallel = 5)
 		{
 			Stopwatch stopwatch = Stopwatch.StartNew();
 
 			try
 			{
-				_gameStorageService.SetProvider(provider);
-				_gameStorageService.PurchaseBatchInsert(request);
+				ValidateParams(totalItems, maxParallel);
+
+				await _gameStorageService.UserBatchInsertAsync(totalItems, maxParallel);
 				stopwatch.Stop();
-				return Ok(stopwatch);
+				return Ok(new DefaultResponse(stopwatch));
+			}
+			catch (ArgumentException ex)
+			{
+				stopwatch.Stop();
+				return BadRequest(new ErrorResponse(stopwatch, ex.Message));
 			}
 			catch (Exception ex)
 			{
 				stopwatch.Stop();
-				return StatusCode(StatusCodes.Status500InternalServerError, new { stopwatch, errorMessage = ex.Message });
+				return StatusCode(StatusCodes.Status500InternalServerError, new ErrorResponse(stopwatch, ex.Message));
 			}
 		}
 
-
-		[HttpPost("{provider}/game-price-batch-update")]
-		public IActionResult GamePriceBatchUpdate([FromRoute] Provider provider, [FromBody] GamePriceBatchUpdateRequest request)
+		/// <summary>
+		/// Insert a batch of purchases.
+		/// </summary>
+		/// <param name="totalItems">Total number of items to be inserted.</param>
+		/// <param name="maxParallel">Maximum number of concurrent threads.</param>
+		/// <param name="gamesRange">Last games to be randomly selected to create purchases.</param>
+		/// <param name="usersRange">Last users to be randomly selected to create purchases.</param>
+		/// <returns></returns>
+		[HttpPost("purchase-batch-insert")]
+		[SwaggerResponse(200, "Success", typeof(DefaultResponse))]
+		[SwaggerResponse(400, "Bad request", typeof(ErrorResponse))]
+		[SwaggerResponse(500, "Internal server error", typeof(ErrorResponse))]
+		public async Task<IActionResult> PurchaseBatchInsertAsync([FromQuery] int totalItems = 100, [FromQuery] int maxParallel = 5, [FromQuery] int gamesRange = 100, [FromQuery] int usersRange = 100)
 		{
 			Stopwatch stopwatch = Stopwatch.StartNew();
 
 			try
 			{
-				_gameStorageService.SetProvider(provider);
-				_gameStorageService.GamePriceBatchUpdate(request);
+				ValidateParams(totalItems, maxParallel, gamesRange, usersRange);
+
+				await _gameStorageService.PurchaseBatchInsertAsync(totalItems, maxParallel, gamesRange, usersRange);
 				stopwatch.Stop();
-				return Ok(stopwatch);
+				return Ok(new DefaultResponse(stopwatch));
+			}
+			catch (ArgumentException ex)
+			{
+				stopwatch.Stop();
+				return BadRequest(new ErrorResponse(stopwatch, ex.Message));
 			}
 			catch (Exception ex)
 			{
 				stopwatch.Stop();
-				return StatusCode(StatusCodes.Status500InternalServerError, new { stopwatch, errorMessage = ex.Message });
+				return StatusCode(StatusCodes.Status500InternalServerError, new ErrorResponse(stopwatch, ex.Message));
 			}
 		}
 
-		[HttpPost("{provider}/games-by-user")]
-		public IActionResult GamesByUsers([FromRoute] Provider provider, [FromBody] GamesByUserRequest request)
+		/// <summary>
+		/// Updates the price of a batch of games.
+		/// </summary>
+		/// <param name="totalItems">Total number of items to be inserted.</param>
+		/// <param name="maxParallel">Maximum number of concurrent threads.</param>
+		/// <returns></returns>
+		[HttpPost("game-price-batch-update")]
+		[SwaggerResponse(200, "Success", typeof(DefaultResponse))]
+		[SwaggerResponse(400, "Bad request", typeof(ErrorResponse))]
+		[SwaggerResponse(500, "Internal server error", typeof(ErrorResponse))]
+		public async Task<IActionResult> GamePriceBatchUpdateAsync([FromQuery] int totalItems = 100, [FromQuery] int maxParallel = 5)
 		{
 			Stopwatch stopwatch = Stopwatch.StartNew();
 
 			try
 			{
-				_gameStorageService.SetProvider(provider);
-				var response = _gameStorageService.GamesByUsers(request);
+				ValidateParams(totalItems, maxParallel);
+
+				await _gameStorageService.GamePriceBatchUpdateAsync(totalItems, maxParallel);
 				stopwatch.Stop();
-				return Ok(new { stopwatch, response });
+				return Ok(new DefaultResponse(stopwatch));
+			}
+			catch (ArgumentException ex)
+			{
+				stopwatch.Stop();
+				return BadRequest(new ErrorResponse(stopwatch, ex.Message));
 			}
 			catch (Exception ex)
 			{
 				stopwatch.Stop();
-				return StatusCode(StatusCodes.Status500InternalServerError, new { stopwatch, errorMessage = ex.Message });
+				return StatusCode(StatusCodes.Status500InternalServerError, new ErrorResponse(stopwatch, ex.Message));
 			}
+		}
+
+		/// <summary>
+		/// Get a list of users and their purchased games.
+		/// </summary>
+		/// <param name="usersRange">Last users to be randomly selected to create purchases.</param>
+		/// <param name="maxParallel">Maximum number of concurrent threads.</param>
+		/// <returns></returns>
+		[HttpPost("games-by-user")]
+		[SwaggerResponse(200, "Success", typeof(GamesByUsersResponse))]
+		[SwaggerResponse(400, "Bad request", typeof(ErrorResponse))]
+		[SwaggerResponse(500, "Internal server error", typeof(ErrorResponse))]
+		public async Task<IActionResult> GamesByUsersAsync([FromQuery] int usersRange = 100, [FromQuery] int maxParallel = 5)
+		{
+			Stopwatch stopwatch = Stopwatch.StartNew();
+
+			try
+			{
+				ValidateParams(usersRange, maxParallel);
+
+				var response = await _gameStorageService.GamesByUsersAsync(usersRange, maxParallel);
+				stopwatch.Stop();
+				return Ok(new GamesByUsersResponse(stopwatch, response));
+			}
+			catch (ArgumentException ex)
+			{
+				stopwatch.Stop();
+				return BadRequest(new ErrorResponse(stopwatch, ex.Message));
+			}
+			catch (Exception ex)
+			{
+				stopwatch.Stop();
+				return StatusCode(StatusCodes.Status500InternalServerError, new ErrorResponse(stopwatch, ex.Message));
+			}
+		}
+
+		private static void ValidateParams(params int[] parameters)
+		{
+			foreach (var param in parameters)
+				if (param == 0) throw new ArgumentException("0 is not allowed");
 		}
 	}
 }

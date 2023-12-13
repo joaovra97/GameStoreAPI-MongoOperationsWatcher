@@ -1,112 +1,104 @@
-﻿using Application.Request;
-using Application.Response;
+﻿using Application.Response;
+using Application.Services.Interfaces;
 using Domain.Entities;
-using Infra.CData.Repositories;
-using Infra.Data.Repositories;
-using Infra.EntityFramework.Repositories;
-using Infra.MongoDbDriver.Repositories;
+using Infra.Data.Repositories.Interfaces;
 using System.Collections.Concurrent;
 
 namespace Application.Services
 {
-	public class GameStorageService : IGameStorageService
+    public class GameStorageService : IGameStorageService
 	{
-		private readonly IServiceProvider _serviceProvider;
 		private readonly IAutoFakerFacadeService _fakerService;
+		private readonly IGameRepository _gameRepository;
+		private readonly IPurchaseRepository _purchaseRepository;
+		private readonly IUserRepository _userRepository;
 
-		private IGameRepository _gameRepository;
-		private IPurchaseRepository _purchaseRepository;
-		private IUserRepository _userRepository;
-
-		public GameStorageService(IServiceProvider serviceProvider, IAutoFakerFacadeService fakerService)
-		{			
-			_serviceProvider = serviceProvider;
+		public GameStorageService(IAutoFakerFacadeService fakerService,
+			IGameRepository gameRepository,
+			IPurchaseRepository purchaseRepository,
+			IUserRepository userRepository)
+		{
 			_fakerService = fakerService;
+			_gameRepository = gameRepository;
+			_purchaseRepository = purchaseRepository;
+			_userRepository = userRepository;
 		}
 
-		public void GameBatchInsert(GameBatchInsertRequest request)
+		public async Task GameBatchInsertAsync(int totalItems, int maxParallel)
 		{
-			ValidateRepositories();
+			var range = Enumerable.Range(0, totalItems);
+			var parallelOptions = new ParallelOptions { MaxDegreeOfParallelism = maxParallel };
 
-			var range = Enumerable.Range(0, request.TotalItems);
-			var parallelOptions = new ParallelOptions { MaxDegreeOfParallelism = request.MaxParallel };
-
-			Parallel.ForEach(range, parallelOptions, i =>
+			await Parallel.ForEachAsync(range, parallelOptions, async (i, ct) =>
 			{
 				var newGame = _fakerService.GenerateGame();
-				_gameRepository.Insert(newGame);
+				await _gameRepository.InsertAsync(newGame);
 			});
 		}
 
-		public void UserBatchInsert(UserBatchInsertRequest request)
+		public async Task UserBatchInsertAsync(int totalItems, int maxParallel)
 		{
-			ValidateRepositories();
+			var range = Enumerable.Range(0, totalItems);
+			var parallelOptions = new ParallelOptions { MaxDegreeOfParallelism = maxParallel };
 
-			var range = Enumerable.Range(0, request.TotalItems);
-			var parallelOptions = new ParallelOptions { MaxDegreeOfParallelism = request.MaxParallel };
-
-			Parallel.ForEach(range, parallelOptions, i =>
+			await Parallel.ForEachAsync(range, parallelOptions, async (i, ct) =>
 			{
 				var newUser = _fakerService.GenerateUser();
-				_userRepository.Insert(newUser);
+				await _userRepository.InsertAsync(newUser);
 			});
 		}
 
-		public void PurchaseBatchInsert(PurchaseBatchInsertRequest request)
+		public async Task PurchaseBatchInsertAsync(int totalItems, int maxParallel, int gamesRange, int usersRange)
 		{
-			ValidateRepositories();
-
-			var range = Enumerable.Range(0, request.TotalItems);
-			var parallelOptions = new ParallelOptions { MaxDegreeOfParallelism = request.MaxParallel };
+			var range = Enumerable.Range(0, totalItems);
+			var parallelOptions = new ParallelOptions { MaxDegreeOfParallelism = maxParallel };
 
 			var random = new Random();
-			var users = _userRepository.GetDescList(request.UsersRange);
-			var games = _gameRepository.GetDescList(request.GamesRange);
+			var users = await _userRepository.GetDescListAsync(usersRange);
+			var games = await _gameRepository.GetDescListAsync(gamesRange);
 
 			if (!users.Any() || !games.Any())
 				throw new NullReferenceException("Games or users collection empty!");
 
-			Parallel.ForEach(range, parallelOptions, i =>
+			await Parallel.ForEachAsync(range, parallelOptions, async (i, ct) =>
 			{
 				var user = users[random.Next(users.Count)];
-				var gamesCount = random.Next(3);
+				var gamesCount = random.Next(2) + 1;
 				var purchaseGames = new List<Game>();
 
-				for(int j = 0; j < gamesCount; i++)				
-					purchaseGames.Add(games[random.Next(games.Count)]);								
+				for (int j = 0; j < gamesCount; j++)
+					purchaseGames.Add(games[random.Next(games.Count)]);
+
+				purchaseGames = purchaseGames.Distinct().ToList();
 
 				var newPurchase = _fakerService.GeneratePurchase(user, purchaseGames);
-				_purchaseRepository.Insert(newPurchase);
+				await _purchaseRepository.InsertAsync(newPurchase);
 			});
 		}
 
-		public void GamePriceBatchUpdate(GamePriceBatchUpdateRequest request)
+		public async Task GamePriceBatchUpdateAsync(int totalItems, int maxParallel)
 		{
-			ValidateRepositories();
+			var parallelOptions = new ParallelOptions { MaxDegreeOfParallelism = maxParallel };
+			var games = await _gameRepository.GetDescListAsync(totalItems);
 
-			var parallelOptions = new ParallelOptions { MaxDegreeOfParallelism = request.MaxParallel };
-			var games = _gameRepository.GetDescList(request.TotalItems);
-
-			Parallel.ForEach(games, parallelOptions, game =>
+			await Parallel.ForEachAsync(games, parallelOptions, async (game, ct) =>
 			{
 				game = _fakerService.UpdateGamePrice(game);
-				_gameRepository.Update(game);
+				await _gameRepository.UpdateAsync(game);
 			});
 		}
 
-		public List<GamesByUsersResponse> GamesByUsers(GamesByUserRequest request)
+		public async Task<List<GamesByUsersItem>> GamesByUsersAsync(int totalItems, int maxParallel)
 		{
-			ValidateRepositories();
+			var parallelOptions = new ParallelOptions { MaxDegreeOfParallelism = maxParallel };
+			var users = await _userRepository.GetDescListAsync(totalItems);
+			var results = new ConcurrentBag<GamesByUsersItem>();
 
-			var parallelOptions = new ParallelOptions { MaxDegreeOfParallelism = request.MaxParallel };
-			var users = _userRepository.GetDescList(request.TotalItems);
-			var results = new ConcurrentBag<GamesByUsersResponse>();
-
-			Parallel.ForEach(users, parallelOptions, user =>
+			await Parallel.ForEachAsync(users, parallelOptions, async (user, ct) =>
 			{
-				List<Purchase> purchases = _purchaseRepository.GetDescListByUserId(user.Id);
+				List<Purchase> purchases = await _purchaseRepository.GetDescListByUserIdAsync(user.Id);
 
-				float totalPrice = 0;
+				decimal totalPrice = 0;
 				List<string> gamesNames = new();
 
 				purchases.ForEach(purchase =>
@@ -115,7 +107,7 @@ namespace Application.Services
 					purchase.Games.ForEach(x => gamesNames.Add(x.Title));
 				});
 
-				results.Add(new GamesByUsersResponse
+				results.Add(new GamesByUsersItem
 				{
 					UserName = user.Name,
 					TotalPurchases = purchases.Count,
@@ -125,34 +117,6 @@ namespace Application.Services
 			});
 
 			return results.ToList();
-		}
-
-		public void SetProvider(Provider provider)
-		{
-			switch (provider)
-			{
-				case Provider.MongoDbDriver:
-					_gameRepository = _serviceProvider.GetService(typeof(IGameMongoDbDriverRepository)) as IGameRepository;
-					_purchaseRepository = _serviceProvider.GetService(typeof(IPurchaseMongoDbDriverRepository)) as IPurchaseRepository;
-					_userRepository = _serviceProvider.GetService(typeof(IUserMongoDbDriverRepository)) as IUserRepository;
-					break;
-				case Provider.EntityFramework:
-					_gameRepository = _serviceProvider.GetService(typeof(IGameEFRepository)) as IGameRepository;
-					_purchaseRepository = _serviceProvider.GetService(typeof(IPurchaseEFRepository)) as IPurchaseRepository;
-					_userRepository = _serviceProvider.GetService(typeof(IUserEFRepository)) as IUserRepository;
-					break;
-				case Provider.CData:
-					_gameRepository = _serviceProvider.GetService(typeof(IGameCDataRepository)) as IGameRepository;
-					_purchaseRepository = _serviceProvider.GetService(typeof(IPurchaseCDataRepository)) as IPurchaseRepository;
-					_userRepository = _serviceProvider.GetService(typeof(IUserCDataRepository)) as IUserRepository;
-					break;
-			}
-		}
-
-		private void ValidateRepositories()
-		{
-			if (_gameRepository is null || _purchaseRepository is null || _userRepository is null)
-				throw new NullReferenceException("Undefined repositories");
 		}
 	}
 }

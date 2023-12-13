@@ -7,9 +7,9 @@ namespace Infra.MongoDbDriver
 	{
 		public static IServiceCollection RegisterMongoDbDriverDependencies(this IServiceCollection services)
 		{
-			services.AddScoped<IGameMongoDbDriverRepository, GameMongoDbDriverRepository>();
-			services.AddScoped<IPurchaseMongoDbDriverRepository, PurchaseMongoDbDriverRepository>();
-			services.AddScoped<IUserMongoDbDriverRepository, UserMongoDbDriverRepository>();
+			services.AddScoped<IGameMongoDbDriverRepository, GameRepository>();
+			services.AddScoped<IPurchaseMongoDbDriverRepository, PurchaseRepository>();
+			services.AddScoped<IUserMongoDbDriverRepository, UserRepository>();
 
 			return services;
 		}

@@ -1,4 +1,5 @@
-﻿using AutoBogus;
+﻿using Application.Services.Interfaces;
+using AutoBogus;
 using Bogus;
 using Domain.Entities;
 
@@ -8,17 +9,17 @@ namespace Application.Services
 	{
 		public Game GenerateGame()
 		{
-			return new AutoFaker<FakeGame>()
+			return new AutoFaker<Game>()
 				.RuleFor(x => x.Id, c => null)
-				.RuleFor(x => x.Title, c => $"{c.Music.GetType()} {c.Commerce.ProductName()}")
+				.RuleFor(x => x.Title, c => $"{c.Music.Genre()} {c.Commerce.ProductName()}")
 				.RuleFor(x => x.Developer, c => c.Company.CompanyName())
-				.RuleFor(x => x.Price, c => c.Random.Float(20, 100))
+				.RuleFor(x => x.Price, c => Math.Round(c.Random.Decimal(20, 100), 2))
 				.Generate();
 		}
 
 		public User GenerateUser()
 		{
-			return new AutoFaker<FakeUser>()
+			return new AutoFaker<User>()
 				.RuleFor(x => x.Id, c => null)
 				.RuleFor(x => x.Name, c => c.Person.FullName)
 				.RuleFor(x => x.Address, c => c.Address.FullAddress())
@@ -30,32 +31,27 @@ namespace Application.Services
 			var purchasedGames = new List<PurchaseGame>();
 			games.ForEach(game =>
 			{
-				new AutoFaker<FakePurchaseGame>()
+				purchasedGames.Add(new AutoFaker<PurchaseGame>()
 					.RuleFor(x => x.Id, c => game.Id)
 					.RuleFor(x => x.Title, c => game.Title)
-					.RuleFor(x => x.PriceAtPurchase, c => game.Price)
-					.Generate();
+					.RuleFor(x => x.PriceAtPurchase, c => Math.Round(game.Price, 2))
+					.Generate());
 			});
 
-			return new AutoFaker<FakePurchase>()
+			return new AutoFaker<Purchase>()
 				.RuleFor(x => x.Id, c => null)
 				.RuleFor(x => x.UserId, c => user.Id)
 				.RuleFor(x => x.UserName, c => user.Name)
 				.RuleFor(x => x.Games, c => purchasedGames)
-				.RuleFor(x => x.PurchaseDate, c => c.Date.PastOffset(1))
+				.RuleFor(x => x.PurchaseDate, c => c.Date.PastOffset(1).DateTime)
 				.RuleFor(x => x.TotalPrice, c => games.Sum(v => v.Price))
 				.Generate();
 		}
 
 		public Game UpdateGamePrice(Game game)
 		{
-			game.Price = new Faker().Random.Float(20, 100);
+			game.Price = Math.Round(new Faker().Random.Decimal(20, 100), 2);
 			return game;
 		}
 	}
-
-	public class FakeGame : Game { }
-	public class FakeUser : User { }
-	public class FakePurchase : Purchase { }
-	public class FakePurchaseGame : PurchaseGame { }
 }

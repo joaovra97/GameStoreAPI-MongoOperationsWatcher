@@ -1,6 +1,6 @@
 ﻿using Domain.Entities;
 
-namespace Application.Services
+namespace Application.Services.Interfaces
 {
     public interface IAutoFakerFacadeService
     {

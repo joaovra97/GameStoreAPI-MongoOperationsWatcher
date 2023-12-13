@@ -1,21 +1,26 @@
-﻿namespace Domain.Entities
+﻿using MongoDB.Bson;
+using MongoDB.Bson.Serialization.Attributes;
+
+namespace Domain.Entities
 {
-	public abstract class Purchase
+	public class Purchase
 	{
-		public virtual string Id { get; set; }
-		public virtual string UserId { get; set; }
-		public virtual string UserName { get; set; }
-		public virtual List<PurchaseGame> Games { get; set; }
-		public virtual DateTime PurchaseDate { get; set; }
-		public virtual float TotalPrice { get; set; }
-		public virtual PaymentMethod PaymentMethod { get; set; }
+		[BsonId]
+		[BsonRepresentation(BsonType.ObjectId)]
+		public string Id { get; set; }		
+		public string UserId { get; set; }
+		public string UserName { get; set; }
+		public List<PurchaseGame> Games { get; set; }
+		public DateTime PurchaseDate { get; set; }
+		public decimal TotalPrice { get; set; }
+		public PaymentMethod PaymentMethod { get; set; }
 	}
 
-	public abstract class PurchaseGame
+	public class PurchaseGame
 	{
-		public virtual string Id { get; set; }
-		public virtual string Title { get; set; }
-		public virtual float PriceAtPurchase { get; set; }
+		public string Id { get; set; }
+		public string Title { get; set; }
+		public decimal PriceAtPurchase { get; set; }
 	}
 
 	public enum PaymentMethod

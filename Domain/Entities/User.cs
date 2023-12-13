@@ -1,9 +1,14 @@
-﻿namespace Domain.Entities
+﻿using MongoDB.Bson;
+using MongoDB.Bson.Serialization.Attributes;
+
+namespace Domain.Entities
 {
-	public abstract class User
+	public class User
 	{
-		public virtual string Id { get; set; }
-		public virtual string Name { get; set; }
-		public virtual string Address { get; set; }
+		[BsonId]
+		[BsonRepresentation(BsonType.ObjectId)]
+		public string Id { get; set; }
+		public string Name { get; set; }
+		public string Address { get; set; }
 	}
 }
